@@ -1,0 +1,22 @@
+{
+  "invoice_number": "INV-1756729728265",
+  "invoice_date": "2025-09-01",
+  "due_date": "2025-09-08",
+  "customer": {
+    "name": "Pink Invoice Test",
+    "email": "yulstest3@gmail.com",
+    "phone": "+1234567890"
+  },
+  "payment": {
+    "amount": "199.99",
+    "debt_before": "1000.00",
+    "debt_after": "800.01"
+  },
+  "company": {
+    "name": "Debt Collection Services",
+    "address": "123 Business Street, Suite 100",
+    "city": "Business City, BC 12345",
+    "phone": "(555) 123-4567",
+    "email": "billing@debtcollection.com"
+  }
+}

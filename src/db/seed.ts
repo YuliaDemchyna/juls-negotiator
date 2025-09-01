@@ -26,31 +26,31 @@ async function seedDatabase() {
       {
         phone: '+1234567890',
         name: 'John Doe',
-        email: 'john.doe@example.com',
+        email: 'yulstest3@gmail.com',
         debt: 5000.0,
       },
       {
         phone: '+1234567891',
         name: 'Jane Smith',
-        email: 'jane.smith@example.com',
+        email: 'yulstest3@gmail.com',
         debt: 3500.5,
       },
       {
         phone: '+1234567892',
         name: 'Bob Johnson',
-        email: 'bob.johnson@example.com',
+        email: 'yulstest3@gmail.com',
         debt: 7250.75,
       },
       {
         phone: '+1234567893',
         name: 'Alice Williams',
-        email: 'alice.williams@example.com',
+        email: 'yulstest3@gmail.com',
         debt: 2100.0,
       },
       {
         phone: '+1234567894',
         name: 'Charlie Brown',
-        email: 'charlie.brown@example.com',
+        email: 'yulstest3@gmail.com',
         debt: 9800.25,
       },
     ];
@@ -148,7 +148,7 @@ async function seedDatabase() {
           status: 'SUCCESS',
           external_id: 'email-sample-789',
           sent_at: new Date().toISOString(),
-          recipient: 'john.doe@example.com',
+          recipient: 'yulstest3@gmail.com',
           error: null,
         },
         crm: {

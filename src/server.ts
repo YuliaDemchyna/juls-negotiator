@@ -91,6 +91,18 @@ app.get('/', (_req: Request, res: Response) => {
   });
 });
 
+// Catch-all for Vapi webhooks at root level (in case they hit / instead of /api/vapi/webhook)
+app.post('/', (req: Request, res: Response) => {
+  logger.info('Root POST webhook received', { 
+    body: req.body,
+    headers: req.headers,
+    type: req.body?.type
+  });
+  
+  // Simple response for webhook validation
+  res.json({ received: true, redirected: true });
+});
+
 // 404 handler
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Endpoint not found' });

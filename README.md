@@ -7,7 +7,7 @@
 - **JWT M2M Authentication**: Secure machine-to-machine authentication
 - **PostgreSQL Database**: Robust data storage with migrations and seeding
 - **Invoice Generation**: integration with Carbone.io for PDF invoices
-- **Email Notifications**: integration with Resend for email delivery
+- **Email Notifications**: Gmail SMTP integration for email delivery
 - **Database CRM**: Simple CRM tracking table for customer debt and follow-ups
 - **Docker Support**: Full containerization with Docker Compose
 - **Logging**: Winston-based logging system, featuring logging best practices
@@ -34,6 +34,41 @@ cp .env.example .env
 ### 2. Configure Environment Variables
 
 Edit `.env` file with your credentials:
+
+```bash
+# Database Configuration
+DATABASE_URL=postgresql://user:password@localhost:5432/debt_negotiation
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=debt_negotiation
+DB_USER=user
+DB_PASSWORD=password
+
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+API_KEY=your_secret_api_key
+JWT_SECRET=your_jwt_secret_key
+SERVER_URL=http://localhost:3000
+
+# VAPI Configuration
+VAPI_API_KEY=your_vapi_api_key
+VAPI_PHONE_NUMBER_ID=your_vapi_phone_number_id
+
+# Gmail SMTP Configuration
+GMAIL_USER=your-email@gmail.com
+GMAIL_APP_PASSWORD=your_16_character_app_password
+
+# Invoice Generation (Carbone.io)
+CARBONE_API_KEY=your_carbone_api_key
+CARBONE_TEMPLATE_ID=your_template_id
+```
+
+**Gmail Setup Instructions:**
+1. Enable 2-Factor Authentication on your Gmail account
+2. Go to Google Account settings → Security → App passwords
+3. Generate a new app password for "Mail"
+4. Use this 16-character password as `GMAIL_APP_PASSWORD`
 
 ### 3. Start Database
 

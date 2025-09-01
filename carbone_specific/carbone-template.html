@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice {d.invoice_number}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: #374151;
+            background: #fff;
+            line-height: 1.3;
+            font-size: 13px;
+        }
+
+        .invoice {
+            max-width: 600px;
+            margin: 15px auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .logo h1 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .invoice-details {
+            text-align: right;
+            font-size: 12px;
+        }
+
+        .invoice-details h2 {
+            font-size: 14px;
+            color: #374151;
+            font-weight: 500;
+            margin-bottom: 1px;
+        }
+
+        .invoice-details span {
+            color: #6b7280;
+        }
+
+        .content {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .bill-to h3 {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+
+        .bill-to p {
+            font-size: 12px;
+            margin-bottom: 1px;
+        }
+
+        .dates {
+            text-align: right;
+            font-size: 12px;
+        }
+
+        .date-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+            min-width: 130px;
+        }
+
+        .date-row span:first-child {
+            color: #6b7280;
+        }
+
+        .payment-box {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 15px;
+            text-align: center;
+            margin: 18px 0;
+            border-radius: 3px;
+        }
+
+        .payment-amount {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 2px;
+        }
+
+        .payment-label {
+            color: #6b7280;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .breakdown {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            font-size: 12px;
+        }
+
+        .breakdown-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .breakdown-item span {
+            display: block;
+            color: #6b7280;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+
+        .breakdown-item strong {
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .instructions {
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 3px;
+            margin: 15px 0;
+            font-size: 12px;
+        }
+
+        .instructions h4 {
+            color: #374151;
+            margin-bottom: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .instructions p {
+            color: #6b7280;
+            line-height: 1.4;
+        }
+
+        .footer {
+            text-align: center;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+            color: #9ca3af;
+            font-size: 11px;
+        }
+
+        .company-name {
+            font-weight: 500;
+            color: #6b7280;
+            margin-bottom: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice">
+        <div class="header">
+            <div class="logo">
+                <h1>Payment Invoice</h1>
+            </div>
+            <div class="invoice-details">
+                <h2>{d.invoice_number}</h2>
+                <span>Due {d.due_date}</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="bill-to">
+                <h3>Bill To</h3>
+                <p><strong>{d.customer.name}</strong></p>
+                <p>{d.customer.email}</p>
+                <p>{d.customer.phone}</p>
+            </div>
+            
+            <div class="dates">
+                <div class="date-row">
+                    <span>Invoice:</span>
+                    <strong>{d.invoice_date}</strong>
+                </div>
+                <div class="date-row">
+                    <span>Due:</span>
+                    <strong>{d.due_date}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="payment-box">
+            <div class="payment-amount">${d.payment.amount}</div>
+            <div class="payment-label">Amount Due</div>
+        </div>
+
+        <div class="breakdown">
+            <div class="breakdown-item">
+                <span>Previous</span>
+                <strong>${d.payment.debt_before}</strong>
+            </div>
+            <div class="breakdown-item">
+                <span>Payment</span>
+                <strong>-${d.payment.amount}</strong>
+            </div>
+            <div class="breakdown-item">
+                <span>Remaining</span>
+                <strong>${d.payment.debt_after}</strong>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h4>Payment Instructions</h4>
+            <p>Reference <strong>{d.invoice_number}</strong> when paying. Due <strong>{d.due_date}</strong>. Contact {d.company.phone} or {d.company.email} for questions.</p>
+        </div>
+
+        <div class="footer">
+            <div class="company-name">{d.company.name}</div>
+            <p>{d.company.address}, {d.company.city} • {d.company.phone}</p>
+        </div>
+    </div>
+</body>
+</html>

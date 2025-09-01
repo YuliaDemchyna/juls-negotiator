@@ -1,0 +1,10 @@
+node_modules/
+dist/
+build/
+logs/
+*.log
+.env*
+docker-compose.yml
+Dockerfile
+*.md
+package-lock.json

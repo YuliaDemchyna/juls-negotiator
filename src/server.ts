@@ -1,12 +1,11 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { pool } from './db/connection';
 import { logger, logRequest } from './utils/logger';
 import apiRoutes from './routes/api.routes';
-import vapiRoutes from './routes/vapi.routes';
+
 
 // Load environment variables
 dotenv.config();
@@ -24,14 +23,7 @@ app.use(
   })
 );
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
-});
 
-app.use('/api', limiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -60,7 +52,6 @@ app.get('/health', async (_req: Request, res: Response) => {
 
 // API Routes
 app.use('/api', apiRoutes);
-app.use('/api/vapi', vapiRoutes);
 
 // Root endpoint
 app.get('/', (_req: Request, res: Response) => {
@@ -70,22 +61,10 @@ app.get('/', (_req: Request, res: Response) => {
     endpoints: {
       health: '/health',
       api: {
-        userinfo: 'GET /api/userinfo',
-        negotiation: 'GET /api/negotiation',
+        userinfo: 'POST /api/userinfo',
+        negotiation: 'POST /api/negotiation',
         call_result: 'POST /api/call_result',
-        call_sessions: {
-          list: 'GET /api/call-sessions',
-          get: 'GET /api/call-sessions/:sessionId',
-          analytics: 'GET /api/call-sessions/analytics',
-        },
-      },
-      vapi: {
-        webhook: 'POST /api/vapi/webhook',
-        functions: {
-          getUserInfo: 'POST /api/vapi/get-user-info',
-          negotiate: 'POST /api/vapi/negotiate',
-          saveResult: 'POST /api/vapi/save-result',
-        },
+
       },
     },
   });

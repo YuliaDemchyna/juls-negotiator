@@ -1,4 +1,5 @@
 import winston from 'winston';
+import { Request, Response, NextFunction } from 'express';
 
 export const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
@@ -23,8 +24,7 @@ export const logger = winston.createLogger({
   ],
 });
 
-//TODO bad practice to put any in the params, fix it
-export function logRequest(req: any, res: any, next: any) {
+export function logRequest(req: Request, res: Response, next: NextFunction) {
   const start = Date.now();
 
   res.on('finish', () => {

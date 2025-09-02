@@ -40,25 +40,7 @@ export async function authenticateM2M(
       }
     }
 
-    // Check for JWT token
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res
-        .status(401)
-        .json({ error: 'No authorization header provided' });
-    }
-
-    const token = authHeader.split(' ')[1]; // Bearer <token>
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-
-    // Verify JWT token
-    const secret = process.env.JWT_M2M_SECRET || 'default_m2m_secret';
-    const decoded = jwt.verify(token, secret) as any;
-
-    req.user = decoded;
-    logger.info('JWT authenticated', { service: decoded.service });
+    
     next();
   } catch (error) {
     logger.error('Authentication error', { error });
@@ -87,39 +69,4 @@ export function generateM2MToken(
     secret,
     { expiresIn } as any
   );
-}
-
-// VAPI Webhook Authentication
-export function authenticateVAPIWebhook(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
-  try {
-    // For development/testing, we'll be more lenient
-    // In production, implement proper signature verification
-    const signature = req.headers['x-vapi-signature'] as string;
-    const webhookSecret = process.env.VAPI_WEBHOOK_SECRET;
-    
-    // Log the incoming request for debugging
-    logger.info('VAPI webhook request', { 
-      headers: req.headers, 
-      body: req.body,
-      url: req.url,
-      method: req.method
-    });
-
-    // Skip signature verification for now to get the functions working
-    // TODO: Implement proper HMAC-SHA256 signature verification in production
-    if (webhookSecret && signature) {
-      logger.info('VAPI webhook with signature', { signature: signature.substring(0, 10) + '...' });
-    } else {
-      logger.info('VAPI webhook without signature (development mode)');
-    }
-
-    next();
-  } catch (error) {
-    logger.error('VAPI webhook authentication error', { error });
-    res.status(500).json({ error: 'Webhook authentication failed' });
-  }
 }

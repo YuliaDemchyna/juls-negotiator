@@ -5,6 +5,12 @@ import { NegotiationService } from '../services/negotiation.service';
 import { EmailService } from '../services/email.service';
 import { logger } from '../utils/logger';
 import { authenticateM2M } from '../middleware/auth';
+import { getUserByPhone } from '../utils/user.utils';
+import { 
+  calculateDebtAfter, 
+  createIntegrationTracking, 
+  saveCallSession 
+} from '../utils/call-session.utils';
 
 const router = Router();
 const negotiationService = new NegotiationService();
@@ -17,7 +23,7 @@ const UserInfoSchema = z.object({
 
 const NegotiationSchema = z.object({
   user_amounts: z.array(z.number()),
-  agent_amounts: z.array(z.number()),
+  agent_amounts: z.array(z.number()).default([]),
   user_amount: z.number().positive(),
   user_debt: z.number().positive(),
 });
@@ -31,15 +37,15 @@ const CallResultSchema = z.object({
 });
 
 /**
- * GET /api/userinfo
+ * POST /api/userinfo
  * Get user information by phone number
  */
-router.get(
+router.post(
   '/userinfo',
   authenticateM2M,
   async (req: Request, res: Response) => {
     try {
-      const validation = UserInfoSchema.safeParse(req.query);
+      const validation = UserInfoSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
           error: 'Invalid request parameters',
@@ -49,20 +55,12 @@ router.get(
 
       const { phone_number } = validation.data;
 
-      logger.info('Fetching user info', { phone_number });
+      const user = await getUserByPhone(phone_number);
 
-      // Query user from database
-      const result = await query(
-        'SELECT id, name, phone_number, email, remaining_debt FROM users WHERE phone_number = $1',
-        [phone_number]
-      );
-
-      if (result.rows.length === 0) {
+      if (!user) {
         logger.warn('User not found', { phone_number });
         return res.status(404).json({ error: 'User not found' });
       }
-
-      const user = result.rows[0];
 
       res.json({
         user_id: user.id,
@@ -79,12 +77,12 @@ router.get(
 );
 
 /**
- * GET /api/negotiation
+ * POST /api/negotiation
  * Calculate negotiation response
  */
-router.get('/negotiation', authenticateM2M, (req: Request, res: Response) => {
+router.post('/negotiation', authenticateM2M, (req: Request, res: Response) => {
   try {
-    const validation = NegotiationSchema.safeParse(req.query);
+    const validation = NegotiationSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
         error: 'Invalid request parameters',
@@ -144,31 +142,10 @@ router.post(
         const sessionId = `SESSION-${Date.now()}`;
 
         // Calculate new debt
-        const debtAfter =
-          status === 'REFUSED' ? debt : Math.max(0, debt - final_amount);
+        const debtAfter = calculateDebtAfter(status, debt, final_amount);
 
         // Prepare integration tracking
-        const integrations: any = {
-          invoice: {
-            status: 'PENDING',
-            external_id: null,
-            url: null,
-            error: null,
-          },
-          email: {
-            status: 'PENDING',
-            external_id: null,
-            sent_at: null,
-            recipient: null,
-            error: null,
-          },
-          crm: {
-            status: 'SUCCESS',
-            external_id: sessionId,
-            synced_at: new Date().toISOString(),
-            error: null,
-          },
-        };
+        const integrations = createIntegrationTracking(sessionId);
 
         // Process integrations for successful/partial payments
         if (status === 'SUCCESS' || status === 'PARTIAL') {
@@ -201,7 +178,7 @@ router.post(
 
               integrations.email = {
                 status: 'SUCCESS',
-                external_id: emailResult.emailId,
+                external_id: emailResult.messageId,
                 sent_at: new Date().toISOString(),
                 recipient: user.email,
                 error: null,
@@ -222,31 +199,22 @@ router.post(
         }
 
         // Save call session using new schema
-        const callSessionQuery = await client.query(
-          `INSERT INTO call_sessions 
-         (user_id, external_session_id, call_channel, outcome, initial_offer, final_amount, 
-          debt_before, debt_after, negotiation_data, integrations, ended_at) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW()) 
-         RETURNING *`,
-          [
-            user_id,
-            sessionId,
-            'MANUAL', // API calls are manual
-            status,
-            initial_amount,
-            final_amount,
-            debt,
-            debtAfter,
-            JSON.stringify({
-              user_amounts: [initial_amount, final_amount],
-              agent_amounts: [],
-              rounds: [],
-            }),
-            JSON.stringify(integrations),
-          ]
-        );
-
-        const callSession = callSessionQuery.rows[0];
+        const callSession = await saveCallSession({
+          userId: user_id,
+          sessionId,
+          channel: 'MANUAL',
+          status,
+          initialAmount: initial_amount,
+          finalAmount: final_amount,
+          debtBefore: debt,
+          debtAfter,
+          negotiationData: {
+            user_amounts: [initial_amount, final_amount],
+            agent_amounts: [],
+            rounds: [],
+          },
+          integrations,
+        }, client);
 
         return {
           status,

@@ -137,7 +137,7 @@ Designed endpoints with clear inputs/outputs:
 | **Zod** | Runtime type validation |
 
 ### Architecture Philosophy
-*Mirrors production setup from previous company (thePrep)*:
+
 - **Clean separation of concerns**
 - **Service layer** for business logic
 - **Database triggers** for data consistency
@@ -150,7 +150,7 @@ Designed endpoints with clear inputs/outputs:
 ### Current State ✅
 *Successfully handles happy path (see demo video)*:
 - **Phone-based user lookup** with real-time database queries
-- **Multi-round negotiation** with embedded business logic
+- **Multi-round negotiation** with agent internal business logic
 - **PDF invoice generation** and automated email delivery
 
 ### Technical Implementation
@@ -163,17 +163,16 @@ Designed endpoints with clear inputs/outputs:
 ## 🚀 Future Improvements
 
 ### 1. **Agent Personality vs. Functionality Balance**
-**Issue**: Demo agent has excellent customer-friendly tone but struggles with negotiation tool formatting. Functional agent technically works perfectly but sounds robotic.
+**Issue**: Demo agent has excellent customer-friendly tone but struggles with negotiation tool formatting. Functional agent technically works perfectly calling the negotiation tool, but sounds robotic.
 
-**Future Solution**: Merge conversational flow of demo agent with technical precision of functional agent through better prompt engineering and tool call formatting.
+**Future Solution**: Merge conversational flow of demo agent with technical precision of functional agent.
 
 ### 2. **Performance Optimizations**
 - **Pre-fetch account data**: Run `getUserInfo` lookup via Workflow before assistant picks up, passing results as variables for instant greeting
 - **Post-call persistence**: Move `saveResult` to `call.ended` Workflow node, eliminating latency during goodbye
 
 ### 3. **Advanced Negotiation Strategy**
-- Replace static formulas with **dynamic scoring model** tuned from historical success rates
-- **Sentiment-driven branching**: Different strategies for cooperative vs. defensive callers  
+- Replace static formulas with **dynamic scoring model** tuned from historical success rates. **Sentiment-driven branching**: Different strategies for cooperative vs. defensive callers  
 - **Adaptive empathy phrases**: Mirror stress levels, softer counteroffers for resistant callers
 
 ### 4. **Analytics & Data Capture**

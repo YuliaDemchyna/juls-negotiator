@@ -58,18 +58,27 @@ export class EmailService {
       to: recipientEmail,
       subject,
       html: body,
-      attachments: [{
-        filename,
-        content: fileBuffer,
-        contentType,
-      }],
+      attachments: [
+        {
+          filename,
+          content: fileBuffer,
+          contentType,
+        },
+      ],
     };
 
-    logger.info('Sending email via Gmail', { to: recipientEmail, subject, attachmentSize: fileBuffer.length });
-    
+    logger.info('Sending email via Gmail', {
+      to: recipientEmail,
+      subject,
+      attachmentSize: fileBuffer.length,
+    });
+
     const info = await transporter.sendMail(mailOptions);
-    
-    logger.info('Email sent successfully', { messageId: info.messageId, to: recipientEmail });
+
+    logger.info('Email sent successfully', {
+      messageId: info.messageId,
+      to: recipientEmail,
+    });
 
     return {
       messageId: info.messageId,
@@ -82,7 +91,7 @@ export class EmailService {
   ): Promise<{ messageId: string; success: boolean; invoiceId: string }> {
     const invoice = await this.generateInvoicePDF(invoiceData);
     const pdfBuffer = Buffer.from(invoice.content, 'base64');
-    
+
     const isFullPayment = invoiceData.debtAfter === 0;
     const emailHtml = this.generateInvoiceEmailHTML(
       invoiceData.userName,
@@ -141,7 +150,10 @@ export class EmailService {
       },
     };
 
-    logger.info('Generating invoice with Carbone.io', { userId: data.userId, templateId: this.carboneTemplateId });
+    logger.info('Generating invoice with Carbone.io', {
+      userId: data.userId,
+      templateId: this.carboneTemplateId,
+    });
 
     const renderResponse = await axios.post(
       `${this.carboneApiUrl}/render/${this.carboneTemplateId}`,
@@ -156,7 +168,9 @@ export class EmailService {
     );
 
     if (!renderResponse.data.success || renderResponse.data.error) {
-      throw new Error(`Carbone API error: ${renderResponse.data.error || 'Unknown error'}`);
+      throw new Error(
+        `Carbone API error: ${renderResponse.data.error || 'Unknown error'}`
+      );
     }
 
     const renderId = renderResponse.data.data?.renderId;

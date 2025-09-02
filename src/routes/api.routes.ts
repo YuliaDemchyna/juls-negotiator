@@ -6,10 +6,10 @@ import { EmailService } from '../services/email.service';
 import { logger } from '../utils/logger';
 import { authenticateM2M } from '../middleware/auth';
 import { getUserByPhone } from '../utils/user.utils';
-import { 
-  calculateDebtAfter, 
-  createIntegrationTracking, 
-  saveCallSession 
+import {
+  calculateDebtAfter,
+  createIntegrationTracking,
+  saveCallSession,
 } from '../utils/call-session.utils';
 
 const router = Router();
@@ -199,22 +199,25 @@ router.post(
         }
 
         // Save call session using new schema
-        const callSession = await saveCallSession({
-          userId: user_id,
-          sessionId,
-          channel: 'MANUAL',
-          status,
-          initialAmount: initial_amount,
-          finalAmount: final_amount,
-          debtBefore: debt,
-          debtAfter,
-          negotiationData: {
-            user_amounts: [initial_amount, final_amount],
-            agent_amounts: [],
-            rounds: [],
+        const callSession = await saveCallSession(
+          {
+            userId: user_id,
+            sessionId,
+            channel: 'MANUAL',
+            status,
+            initialAmount: initial_amount,
+            finalAmount: final_amount,
+            debtBefore: debt,
+            debtAfter,
+            negotiationData: {
+              user_amounts: [initial_amount, final_amount],
+              agent_amounts: [],
+              rounds: [],
+            },
+            integrations,
           },
-          integrations,
-        }, client);
+          client
+        );
 
         return {
           status,

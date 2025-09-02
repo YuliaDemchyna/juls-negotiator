@@ -21,8 +21,8 @@ export function calculateDebtAfter(
   currentDebt: number,
   paymentAmount: number
 ): number {
-  return status === 'REFUSED' 
-    ? currentDebt 
+  return status === 'REFUSED'
+    ? currentDebt
     : Math.max(0, currentDebt - paymentAmount);
 }
 
@@ -62,7 +62,7 @@ export async function saveCallSession(
   client?: any
 ): Promise<any> {
   const queryFn = client ? client.query.bind(client) : query;
-  
+
   const result = await queryFn(
     `INSERT INTO call_sessions 
      (user_id, external_session_id, call_channel, outcome, initial_offer, final_amount, 

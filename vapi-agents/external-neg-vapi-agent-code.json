@@ -1,0 +1,230 @@
+{
+  "id": "a01cd4d6-8783-4ae3-a8f2-7f51d882a1e2",
+  "orgId": "6b576050-978c-4654-8a68-3721abe166c8",
+  "name": "Juls w External Negotiation",
+  "voice": {
+    "model": "eleven_turbo_v2_5",
+    "speed": 1,
+    "voiceId": "jBzLvP03992lMFEkj2kJ",
+    "provider": "11labs",
+    "stability": 0.5,
+    "similarityBoost": 0.75,
+    "enableSsmlParsing": true,
+    "optimizeStreamingLatency": 3
+  },
+  "createdAt": "2025-09-02T05:07:46.135Z",
+  "updatedAt": "2025-09-02T08:03:58.581Z",
+  "functions": [
+    {
+      "name": "getUserInfo",
+      "description": "Get user information including name and debt amount",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "phone_number": {
+            "description": "The phone number of the caller",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone_number"
+        ]
+      },
+      "serverUrl": "https://080dd9e7a75a.ngrok-free.app/api/vapi/get-user-info"
+    },
+    {
+      "name": "negotiatePayment",
+      "description": "Calculate negotiation response based on user payment offer",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "user_debt": {
+            "description": "Total user debt",
+            "type": "number"
+          },
+          "user_amount": {
+            "description": "Current user offer amount",
+            "type": "number"
+          },
+          "user_amounts": {
+            "description": "History of user offers",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "agent_amounts": {
+            "description": "History of agent counter-offers",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "user_amounts",
+          "agent_amounts",
+          "user_amount",
+          "user_debt"
+        ]
+      },
+      "serverUrl": "https://080dd9e7a75a.ngrok-free.app/api/vapi/negotiate"
+    },
+    {
+      "name": "saveCallResult",
+      "description": "Save the final call result and trigger post-call workflows",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "debt": {
+            "description": "Total debt amount",
+            "type": "number"
+          },
+          "status": {
+            "description": "Call outcome status",
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "PARTIAL",
+              "REFUSED"
+            ]
+          },
+          "user_id": {
+            "description": "User ID from getUserInfo",
+            "type": "string"
+          },
+          "final_amount": {
+            "description": "Final agreed amount, 0 if refused",
+            "type": "number"
+          },
+          "phone_number": {
+            "description": "User phone number",
+            "type": "string"
+          },
+          "initial_amount": {
+            "description": "Initial amount offered by user",
+            "type": "number"
+          }
+        },
+        "required": [
+          "user_id",
+          "phone_number",
+          "status",
+          "initial_amount",
+          "final_amount",
+          "debt"
+        ]
+      },
+      "serverUrl": "https://080dd9e7a75a.ngrok-free.app/api/vapi/save-result"
+    }
+  ],
+  "model": {
+    "model": "gpt-4-turbo",
+    "toolIds": [
+      "b2d82389-088f-4b0b-9950-037ce62371f3",
+      "46d06851-cbc2-464f-afff-824527247591",
+      "e172c32c-6846-4d67-8b71-56fb68782336"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "# Role\n  You are a professional, calm, empathetic inbound debt-collection agent.\n\n  Hard rules\n  - First action: silently call getUserInfo(phone_number={{call.from}}). Do not ask for the number unless the lookup fails.\n  - Speak in short sentences. Confirm numbers clearly (“one hundred dollars” and “$100”).\n  - Never accept card numbers. Say invoices are sent securely by email/text.\n  - Max 3 negotiation rounds. Track arrays: user_amounts[], agent_amounts[].\n  - Always send numbers as NUMBER types, not strings.\n  - If a tool errors: apologize once, coerce types, retry the same call exactly once, then proceed.\n\n  Flow\n  1) After getUserInfo:\n   - If found: “Hi {{name}}. You owe {{debt}}. How much would you like to pay today?”\n   - If not found: ask for the number ONCE. Accept messy speech (“plus one two three…”, “last digits 6789”). Normalize to E.164. Re-call getUserInfo. If still not found: offer callback number and end.\n\n  2) When caller gives an amount:\n   - Extract a number in dollars → user_amount (NUMBER).\n   - Push to user_amounts[].\n\n  3) Call negotiate with:\n   { user_debt: NUMBER, user_amount: NUMBER,\n     user_amounts: NUMBER[], agent_amounts: NUMBER[] }.\n\n  4) Handle negotiate result:\n   - HAGGLE with agent_amount present:\n     “Are you comfortable paying {{agent_amount}} today?”\n     Push agent_amount to agent_amounts[]. Listen for a new number → go to step 3.\n   - HAGGLE but agent_amount is missing/null:\n     Compute a safe counter = clamp(round(0.35*user_debt + 0.65*last_user_amount), 25, user_debt)\n     Propose that counter and still call negotiate again with the updated arrays.\n   - STOP: “Great. You’re set to pay {{agent_amount}} today. Remaining balance is {{debt - agent_amount}}. Invoice on the way to your email. Bye.”\n   - STOP - if no outcome was achieved: “Understood. I’ve noted today’s outcome. You’re welcome to call again. Bye.”\n\n  5) At the end of every call (after STOP from negotiation tool), you must always call the tool saveResult before speaking the closing line. \n\n\n  Behavioral guardrails\n  - Hostile language: acknowledge once, give a calm boundary, offer to continue or end.\n   Example: “I hear you’re frustrated. I can share payment options, or we can end the call. Which do you prefer?”\n  - If silence > 3s: “Are you still there?” Then end politely.\n\n  Normalization rules (always apply)\n  - Phone: strip spaces, commas, words; join digits; add country code if missing; keep “+”.\n  - Money: map words/phrases to numbers (“a hundred”, “one fifty”, “about 200”→200).\n  - Ensure types: user_amount, user_debt, agent_amount are NUMBER; arrays are NUMBER[].\n\n  Tool usage contract\n  - getUserInfo(phone_number: string)\n  - negotiate(phone_number: string, user_debt: number, user_amount: number, user_amounts: number[], agent_amounts: number[])\n  - saveResult(user_id: string, status: \"SUCCESS\"|\"PARTIAL\"|\"REFUSED\", initial_amount: number, final_amount: number, debt: number)\n"
+      }
+    ],
+    "provider": "openai",
+    "maxTokens": 500,
+    "temperature": 0.7,
+    "numFastTurns": 1,
+    "emotionRecognitionEnabled": true
+  },
+  "firstMessage": "Hello! You've reached Juls Collectors. How may I help you today?",
+  "endCallMessage": "Thank you for your time today. Have a good one!",
+  "transcriber": {
+    "model": "nova-2",
+    "language": "en",
+    "provider": "deepgram"
+  },
+  "serverUrl": "https://mflsmdlfe.com",
+  "endCallPhrases": [
+    "goodbye",
+    "bye bye",
+    "end call",
+    "hang up",
+    "I'm done",
+    "stop calling"
+  ],
+  "analysisPlan": {
+    "summaryPlan": {
+      "messages": [
+        {
+          "content": "Summarize the call including the initial offer, negotiation process, and final outcome.",
+          "role": "system"
+        },
+        {
+          "content": "Here is the transcript:\n\n{{transcript}}\n\n. Here is the ended reason of the call:\n\n{{endedReason}}\n\n",
+          "role": "user"
+        }
+      ]
+    },
+    "structuredDataPlan": {
+      "enabled": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "PARTIAL",
+              "REFUSED"
+            ]
+          },
+          "final_amount": {
+            "type": "number"
+          },
+          "success_rate": {
+            "type": "number"
+          },
+          "initial_offer": {
+            "type": "number"
+          },
+          "negotiation_rounds": {
+            "type": "number"
+          }
+        }
+      },
+      "messages": [
+        {
+          "content": "Extract key metrics from the negotiation\n\nJson Schema:\n{{schema}}\n\nOnly respond with the JSON.",
+          "role": "system"
+        },
+        {
+          "content": "Here is the transcript:\n\n{{transcript}}\n\n. Here is the ended reason of the call:\n\n{{endedReason}}\n\n",
+          "role": "user"
+        }
+      ]
+    },
+    "successEvaluationPlan": {
+      "rubric": "PassFail",
+      "messages": [
+        {
+          "content": "Evaluate if the agent successfully negotiated a higher payment\n\nRubric:\n\n{{rubric}}\n\nOnly respond with the evaluation result.",
+          "role": "system"
+        },
+        {
+          "content": "Here is the transcript of the call:\n\n{{transcript}}\n\n. Here is the ended reason of the call:\n\n{{endedReason}}\n\n",
+          "role": "user"
+        },
+        {
+          "content": "Here was the system prompt of the call:\n\n{{systemPrompt}}\n\n",
+          "role": "user"
+        }
+      ]
+    }
+  },
+  "server": {
+    "url": "https://mflsmdlfe.com",
+    "timeoutSeconds": 20
+  },
+  "isServerUrlSecretSet": false
+}

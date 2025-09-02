@@ -40,7 +40,6 @@ export async function authenticateM2M(
       }
     }
 
-    
     next();
   } catch (error) {
     logger.error('Authentication error', { error });

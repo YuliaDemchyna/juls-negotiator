@@ -12,9 +12,11 @@ export interface User {
 /**
  * Get user by phone number
  */
-export async function getUserByPhone(phoneNumber: string): Promise<User | null> {
+export async function getUserByPhone(
+  phoneNumber: string
+): Promise<User | null> {
   logger.info('Fetching user by phone', { phone_number: phoneNumber });
-  
+
   const result = await query(
     'SELECT id, name, phone_number, email, remaining_debt FROM users WHERE phone_number = $1',
     [phoneNumber]
